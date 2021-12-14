@@ -12,17 +12,27 @@
         ><i class="iconfont icon-trash"></i
       ></router-link>
     </div>
-    <div class="logout" @click="onLogout">
-      <i class="iconfont icon-logout"></i>
+    <div class="logout" >
+      <i class="iconfont icon-logout" @click="logout"></i>
     </div>
   </div>
 </template>
 
 <script>
 import avatar from "@/components/Avatar";
+import AUTH from '@/apis/auth';
+
+
 export default {
   components: {
     avatar
+  },
+  methods:{
+    logout(){
+      AUTH.logout().then(data=>{
+        console.log(data)
+      })
+    }
   }
 };
 </script>

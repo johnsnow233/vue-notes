@@ -7,7 +7,7 @@
           <div class="form">
             <h3 @click="showRegister">创建账户</h3>
             <transition name="slide">
-              <div v-bind:class="{show:isShowRegister}" class="register">
+              <div v-bind:class="{ show: isShowRegister }" class="register">
                 <input
                   type="text"
                   v-model="register.username"
@@ -24,10 +24,10 @@
                 <div class="button" @click="onRegister">创建账号</div>
               </div>
             </transition>
-            
-              <h3 @click="showLogin">登录</h3>
-              <transition name="slide">
-              <div v-bind:class="{show:isShowLogin}" class="login">
+
+            <h3 @click="showLogin">登录</h3>
+            <transition name="slide">
+              <div v-bind:class="{ show: isShowLogin }" class="login">
                 <input
                   type="text"
                   v-model="login.username"
@@ -52,6 +52,13 @@
 </template>
 
 <script>
+import AUTH from "@/apis/auth";
+import Bus from '@/helpers/bus'
+
+// AUTH.getInfo().then(data => {
+//   console.log(data);
+// });
+
 export default {
   name: "Login",
   data() {
@@ -94,9 +101,18 @@ export default {
         this.register.notice = result2.notice;
         return;
       }
-      this.register.isError = false;
-      this.register.notice = "";
-      console.log("11111111");
+      AUTH.register({
+        username: this.register.username,
+        password: this.register.password
+      }).then(data => {
+        this.register.isError = false
+        this.register.notice = ''
+        Bus.$on('userInfo', {username :this.login.username})
+        this.$router.push({path: 'notebooks'})
+      }).catch(data=>{
+        this.register.isError = true 
+        this.register.notice = data.msg
+      });
     },
     onLogin() {
       let result1 = this.validUsername(this.login.username);
@@ -111,9 +127,20 @@ export default {
         this.login.notice = result2.notice;
         return;
       }
-      this.login.isError = false;
-      this.login.notice = "";
-      console.log("11111111");
+      AUTH.login({
+        username: this.login.username,
+        password: this.login.password
+      }).then(data => {
+        this.login.isError = false
+        this.login.notice = ''
+        Bus.$on('userInfo', {username :this.login.username})
+        this.$router.push({path: 'notebooks'})
+      }).catch(data=>{
+        this.login.isError = true 
+        
+        this.login.notice = data.msg
+      });
+
     },
     validUsername(username) {
       return {
