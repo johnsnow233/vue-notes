@@ -1,13 +1,17 @@
 <template>
-  <div id="note-detail">
-    <h1>{{msg}} : {{ $route.params.noteId }}</h1>
+  <div id="note" class="detail">
+    <note-sidebar></note-sidebar>
   </div>
 </template>
 
 <script>
+import NoteSidebar from './NoteSidebar'
 import AUTH from '@/apis/auth'
 export default {
   name: 'Login',
+  components:{
+    NoteSidebar
+  },
   data () {
     return {
       msg: '笔记详情页'
@@ -25,7 +29,11 @@ export default {
 </script>
 
 <style scoped>
-h1 {
-  color: blue;
+#note {
+  display: flex;
+  align-items: stretch;
+  background-color: #fff;
+  flex: 1;
 }
+
 </style>

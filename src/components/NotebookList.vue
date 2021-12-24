@@ -7,15 +7,24 @@
     </header>
     <main>
       <div class="layout">
-        <h3>笔记本({{notebooks.length}})</h3>
+        <h3>笔记本({{ notebooks.length }})</h3>
         <div class="book-list">
-          <router-link v-for="notebook in notebooks" :key="notebook.id" to='notebook/1' class="notebook">
+          <router-link
+            v-for="(notebook, index) in notebooks"
+            :key="index"
+            :to="`/note?notebookId=${notebook.id}`"
+            class="notebook"
+          >
             <div>
-              <span class="iconfont icon-notebook"></span> {{notebook.title}}
-              <span>{{notebook.noteCounts}}</span>
-              <span class="action" @click.stop.prevent="onEdit(notebook)">编辑</span>
-              <span class="action" @click.stop.prevent="onDelete(notebook)">删除</span>
-              <span class="data">3天前</span>
+              <span class="iconfont icon-notebook"></span> {{ notebook.title }}
+              <span>{{ notebook.noteCounts }}</span>
+              <span class="action" @click.stop.prevent="onEdit(notebook)"
+                >编辑</span
+              >
+              <span class="action" @click.stop.prevent="onDelete(notebook)"
+                >删除</span
+              >
+              <span class="data">{{ notebook.friendlyCreatedAt }}</span>
             </div>
           </router-link>
         </div>
@@ -27,11 +36,12 @@
 <script>
 import AUTH from "@/apis/auth";
 import Notebooks from "@/apis/notebooks";
+import { friendlyDate } from "@/helpers/util";
 
 export default {
   data() {
     return {
-      notebooks:[]
+      notebooks: []
     };
   },
   created() {
@@ -39,42 +49,60 @@ export default {
       if (!res.isLogin) {
         this.$router.push({ path: "/login" });
       }
-    Notebooks.getAll().then(res=>{
-      this.notebooks = res.data
-    })
+      Notebooks.getAll().then(res => {
+        this.notebooks = res.data;
+      });
     });
   },
   methods: {
     onCreate() {
-      let title = window.prompt('创建笔记本')
-      if(title.trim() === ''){
-        alert('标题不能为空')
-        return
-      }
-      Notebooks.addNotebooks({title})
-        .then(res => {
-          alert(res.msg)
-          this.notebooks.unshift(res.data)
+      this.$prompt("请输入新的笔记本标题·", "创建笔记本", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        inputPattern: /^.{1,30}$/,
+        inputErrorMessage: "标题不能为空, 且不能超过30个字符"
+      })
+        .then(({ value }) => {
+          return Notebooks.addNotebooks({ title: value });
         })
+        .then(res => {
+          console.log(res);
+          res.data.friendlyCreatedAt = friendlyDate(res.data.createdAt);
+          this.notebooks.unshift(res.data);
+          this.$message.success(res.msg);
+        });
     },
     onEdit(notebook) {
-      let title = window.prompt('修改笔记本', notebook.title)
-      Notebooks.updateNotebooks(notebook.id, {title})
-        .then(res =>{
-          console.log(res)
-          notebook.title = title
+      let title = "";
+      this.$prompt("请输入新的笔记本标题·", "编辑笔记本", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        inputPattern: /^.{1,30}$/,
+        inputValue: notebook.title,
+        inputErrorMessage: "标题不能为空, 且不能超过30个字符"
+      })
+        .then(({ value }) => {
+          title = value;
+          return Notebooks.updateNotebooks(notebook.id, { title });
         })
+        .then(res => {
+          notebook.title = title;
+          this.$message.success(res.msg);
+        });
     },
     onDelete(notebook) {
-      console.log(notebook)
-      let isConfirm = window.confirm('你确定要删除吗')
-      if(isConfirm){
-        Notebooks.deleteNotebooks(notebook.id)
-          .then(res =>{
-            console.log(res)
-            this.notebooks.splice(this.notebooks.indexOf(notebook), 1)
-          })
-      }
+      this.$confirm("确认删除笔记本吗?", "删除笔记", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(() => {
+          return Notebooks.deleteNotebooks(notebook.id);
+        })
+        .then(res => {
+          this.notebooks.splice(this.notebooks.indexOf(notebook), 1);
+          this.$message.success(res.msg);
+        });
     }
   }
 };
