@@ -1,6 +1,6 @@
 <template>
   <div class="note-sidebar">
-    <span class="btn add-note">添加笔记</span>
+    <span class="btn add-note" @click="addNote">添加笔记</span>
     <el-dropdown
       class="notebook-title"
       @command="handleCommand"
@@ -25,7 +25,7 @@
     </div>
     <ul class="notes">
       <li v-for="note in notes" :key="note.id">
-        <router-link :to="`/note?noteId=${note.id}`">
+        <router-link :to="`/note?noteId=${note.id}&notebookId=${curBook.id}`">
           <span class="date">{{ note.updatedAtFriendly }}</span>
           <span class="title">{{ note.title }}</span>
         </router-link>
@@ -36,13 +36,16 @@
 <script>
 import Notebooks from "@/apis/notebooks";
 import Notes from "@/apis/notes";
+import Bus from '@/helpers/bus'
 
 export default {
   data() {
     return {
       notebooks: [],
       notes: [],
-      curBook: {}
+      curBook: {
+        id:''
+      }
     };
   },
   created() {
@@ -52,16 +55,27 @@ export default {
           return Notes.getAll({notebookId:this.curBook.id})
     }).then(res =>{
       this.notes = res.data
+      this.$emit('update:notes', this.notes)
+      Bus.$emit('update:notes', this.notes)
     })
   },
   methods: {
     handleCommand(notebookId) {
-      if (notebookId != "trash") {
-        Notes.getAll({ notebookId }).then(res => {
+      if (notebookId == "trash") { 
+        return this.$router.push({ path: '/trash' })
+      }
+      this.curBook = this.notebooks.find(notebook => notebook.id == notebookId)
+      Notes.getAll({ notebookId }).then(res => {
           console.log(res);
           this.notes = res.data;
+          this.$emit('update:notes', this.notes)
         });
-      }
+    },
+    addNote(){
+      Notes.addNote({ notebookId: this.curBook.id} )
+        .then(res =>{
+          this.notes.unshift(res.data)
+        })
     }
   }
 };
